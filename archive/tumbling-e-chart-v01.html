@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tumbling E Vision Test | Clinical</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+    .phase {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    .phase.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .card-rect {
+      border-radius: 10px;
+      background: linear-gradient(145deg, #f8f9fc, #e9ecf2);
+      border: 2px dashed #94a3b8;
+      transition: width 0.08s ease, height 0.08s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #64748b;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-rect::after {
+      content: 'CREDIT CARD';
+      position: absolute;
+      font-weight: 600;
+      letter-spacing: 2px;
+      opacity: 0.25;
+      font-size: 14px;
+    }
+    .card-rect .dim-label {
+      position: absolute;
+      bottom: 6px;
+      font-size: 10px;
+      opacity: 0.6;
+    }
+    .ruler-container {
+      width: 100%;
+      overflow-x: auto;
+      padding: 12px 0 4px 0;
+      user-select: none;
+    }
+    .ruler-inner {
+      display: flex;
+      align-items: flex-end;
+      height: 52px;
+      min-width: 100%;
+      position: relative;
+    }
+    .cm-mark {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .cm-tick {
+      width: 2px;
+      background: #1e293b;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+    .cm-tick.major {
+      height: 24px;
+    }
+    .cm-tick.minor {
+      height: 14px;
+    }
+    .cm-label {
+      font-size: 10px;
+      color: #334155;
+      margin-top: 3px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .chart-wrapper {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      padding: 24px 16px;
+      overflow-x: auto;
+      min-height: 420px;
+      position: relative;
+    }
+    .chart-wrapper.mirror {
+      transform: scaleX(-1);
+    }
+    .e-letter {
+      display: inline-block;
+      font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif;
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      border-radius: 3px;
+      padding: 2px;
+      margin: 0 1px;
+      user-select: none;
+      position: relative;
+      color: #000000;
+    }
+    .e-letter:hover {
+      filter: brightness(0.85);
+    }
+    .e-letter.passed {
+      background: rgba(34, 197, 94, 0.35);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.7);
+    }
+    .e-letter.failed {
+      background: rgba(239, 68, 68, 0.30);
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.7);
+    }
+    .chart-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 0;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s ease;
+      flex-wrap: wrap;
+    }
+    .chart-row:hover {
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .chart-row.active-row {
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .chart-row.benchmark-sv {
+      border-left: 4px solid #16a34a;
+      background: rgba(22, 163, 74, 0.07);
+    }
+    .chart-row.benchmark-lnv {
+      border-left: 4px solid #dc2626;
+      background: rgba(220, 38, 38, 0.07);
+    }
+    .snellen-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      min-width: 56px;
+      text-align: right;
+      padding-right: 14px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .snellen-label.mirror {
+      transform: scaleX(-1);
+    }
+    .letters-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .eye-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 1px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #cbd5e1;
+      border-radius: 28px;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      left: 3px;
+      bottom: 3px;
+      width: 22px;
+      height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked+.toggle-slider {
+      background: #3b82f6;
+    }
+    .toggle-switch input:checked+.toggle-slider::before {
+      transform: translateX(24px);
+    }
+    .btn-eye-select {
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 2px solid #cbd5e1;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-eye-select.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+    .btn-eye-select:hover {
+      border-color: #93c5fd;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: #d1d5db;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.25s ease;
+    }
+    @media print {
+      body {
+        background: #fff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-report {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 40px;
+        font-size: 12px;
+        color: #000;
+        background: #fff;
+      }
+      .print-report table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+      }
+      .print-report th,
+      .print-report td {
+        border: 1px solid #333;
+        padding: 8px 12px;
+        text-align: left;
+      }
+      .print-report th {
+        background: #f1f5f9;
+        font-weight: 600;
+      }
+      .print-report .disclaimer {
+        border: 2px solid #dc2626;
+        padding: 12px 16px;
+        margin-top: 20px;
+        font-weight: 700;
+        font-size: 10px;
+        color: #991b1b;
+      }
+    }
+    .print-only {
+      display: none;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .btn-primary:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    .btn-success {
+      background: #16a34a;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-success:hover {
+      background: #15803d;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s ease;
+      background: #fff;
+    }
+    .input-field:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .unit-btn {
+      padding: 8px 18px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #fff;
+      transition: all 0.12s ease;
+    }
+    .unit-btn.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+    .unit-btn:hover {
+      border-color: #93c5fd;
+    }
+    .result-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e2e8f0;
+    }
+    .progress-steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 0 4px;
+    }
+    .step-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+    .step-dot.active {
+      background: #3b82f6;
+      width: 28px;
+      border-radius: 6px;
+    }
+    .step-dot.done {
+      background: #16a34a;
+    }
+    .step-line {
+      width: 16px;
+      height: 2px;
+      background: #cbd5e1;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+    .step-line.done {
+      background: #16a34a;
+    }
+    .benchmark-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.3px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .benchmark-badge.sv {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .benchmark-badge.lnv {
+      background: #fecaca;
+      color: #991b1b;
+    }
+    @media (max-width: 640px) {
+      .chart-wrapper {
+        padding: 12px 8px;
+      }
+      .snellen-label {
+        min-width: 40px;
+        font-size: 11px;
+        padding-right: 8px;
+      }
+      .e-letter {
+        padding: 1px;
+      }
+      .chart-row {
+        gap: 4px;
+        padding: 4px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="printReport" class="print-only print-report">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="font-size:22px;margin:0;">Tumbling E Vision Screening Report</h1>
+    <p style="color:#64748b;margin:4px 0 0 0;">Clinical Vision Acuity Assessment</p>
+  </div>
+  <table>
+    <tr><th style="width:40%;">Patient Name</th><td id="printName">&mdash;</td></tr>
+    <tr><th>Age</th><td id="printAge">&mdash;</td></tr>
+    <tr><th>Test Date</th><td id="printDate">&mdash;</td></tr>
+    <tr><th>Test Distance</th><td id="printDistance">&mdash;</td></tr>
+    <tr><th>Screen PPI</th><td id="printPPI">&mdash;</td></tr>
+  </table>
+  <h3 style="margin-top:20px;">Visual Acuity Results</h3>
+  <table>
+    <thead><tr><th>Eye</th><th>Snellen Fraction</th><th>Decimal</th><th>Estimated Lens Power</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Right Eye (OD)</strong></td><td id="printODSnellen">&mdash;</td><td id="printODDecimal">&mdash;</td><td id="printODLens">&mdash;</td></tr>
+      <tr><td><strong>Left Eye (OS)</strong></td><td id="printOSSnellen">&mdash;</td><td id="printOSDecimal">&mdash;</td><td id="printOSLens">&mdash;</td></tr>
+    </tbody>
+  </table>
+  <div class="disclaimer">
+    DISCLAIMER: This calculation is a rough mathematical estimation for screening purposes only. It does not replace a comprehensive refraction exam by a licensed optometrist or ophthalmologist. Do not purchase lenses based solely on this screening.
+  </div>
+  <p style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:center;">Generated by Tumbling E Vision Test &mdash; Report printed on <span id="printGenerated"></span></p>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <h3 class="text-xl font-bold text-slate-800 mb-2" id="modalTitle">Testing Complete</h3>
+    <p class="text-slate-600 mb-6" id="modalMessage">Proceed to the next step.</p>
+    <div class="flex gap-3 justify-end">
+      <button class="btn-secondary no-print" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary no-print" id="modalConfirmBtn" onclick="confirmModal()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-5xl mx-auto px-4 py-6">
+
+  <header class="text-center mb-6 no-print">
+    <h1 class="text-2xl font-bold text-slate-800 tracking-tight">
+      <span class="text-blue-600">&#x25B3;</span> Tumbling E Vision Test
+    </h1>
+    <p class="text-slate-500 text-sm mt-1">Clinical Vision Acuity Screening</p>
+    <div class="progress-steps mt-3" id="progressDots">
+      <span class="step-dot active" data-step="1"></span><span class="step-line" data-step="1-2"></span>
+      <span class="step-dot" data-step="2"></span><span class="step-line" data-step="2-3"></span>
+      <span class="step-dot" data-step="3"></span><span class="step-line" data-step="3-4"></span>
+      <span class="step-dot" data-step="4"></span><span class="step-line" data-step="4-5"></span>
+      <span class="step-dot" data-step="5"></span>
+    </div>
+  </header>
+
+  <!-- PHASE 1 -->
+  <div class="phase active" id="phase1">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Patient Profile</h2>
+      <p class="text-slate-500 text-sm mb-6">Enter patient information to begin the screening.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Patient's Full Name</label>
+          <input class="input-field" id="patientName" type="text" placeholder="e.g., John Doe" autocomplete="name">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Age</label>
+          <input class="input-field" id="patientAge" type="number" placeholder="e.g., 35" min="0" max="140">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Test Date</label>
+          <input class="input-field" id="testDate" type="date">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">First Eye to Test</label>
+          <div class="flex gap-3 mt-1">
+            <button class="btn-eye-select active flex-1" id="eyeRightBtn" onclick="selectFirstEye('right')">
+              <span class="block text-sm">Right Eye (OD)</span>
+            </button>
+            <button class="btn-eye-select flex-1" id="eyeLeftBtn" onclick="selectFirstEye('left')">
+              <span class="block text-sm">Left Eye (OS)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-end">
+        <button class="btn-primary" onclick="goToPhase(2)">Proceed to Calibration &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase" id="phase2">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Screen Calibration</h2>
+      <p class="text-slate-500 text-sm mb-6">Calibrate your screen's physical pixel density for accurate optotype sizing.</p>
+      <div class="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200">
+        <h3 class="font-bold text-slate-700 mb-1">Method 1: Credit Card Calibration</h3>
+        <p class="text-xs text-slate-500 mb-4">Place a physical credit card on the screen and adjust the slider until the on-screen box matches the card exactly.</p>
+        <div class="flex justify-center mb-4">
+          <div class="card-rect" id="creditCardRect">
+            <span class="dim-label">85.6 &times; 53.98 mm</span>
+          </div>
+        </div>
+        <div class="max-w-md mx-auto">
+          <div class="flex justify-between text-xs text-slate-500 mb-1">
+            <span>Smaller</span>
+            <span class="font-semibold text-blue-700" id="cardWidthPxLabel">324 px</span>
+            <span>Larger</span>
+          </div>
+          <input type="range" id="cardSlider" min="50" max="750" value="324" oninput="updateCardCalibration()">
+        </div>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200">
+        <h3 class="font-bold text-slate-700 mb-1">Method 2: Ruler Calibration</h3>
+        <p class="text-xs text-slate-500 mb-4">Place a physical student ruler against the screen and adjust the slider so the on-screen centimeter markings match your physical ruler perfectly.</p>
+        <div class="ruler-container"><div class="ruler-inner" id="rulerInner"></div></div>
+        <div class="max-w-md mx-auto mt-3">
+          <div class="flex justify-between text-xs text-slate-500 mb-1">
+            <span>Smaller</span>
+            <span class="font-semibold text-blue-700" id="rulerPxCmLabel">37.8 px/cm</span>
+            <span>Larger</span>
+          </div>
+          <input type="range" id="rulerSlider" min="5" max="200" value="38" oninput="updateRulerCalibration()">
+        </div>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="text-sm font-semibold text-blue-800">Effective Screen PPI:</span>
+          <span class="text-2xl font-bold text-blue-900 ml-2" id="effectivePPI">96</span>
+          <span class="text-blue-700 text-sm"> ppi</span>
+        </div>
+        <div class="text-xs text-blue-600 space-y-0.5">
+          <div>From credit card: <span id="ppiFromCard">&mdash;</span> PPI</div>
+          <div>From ruler: <span id="ppiFromRuler">&mdash;</span> PPI</div>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-between">
+        <button class="btn-secondary" onclick="goToPhase(1)">&larr; Back to Patient Profile</button>
+        <button class="btn-primary" onclick="goToPhase(3)">Next: Distance Setup &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase" id="phase3">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Distance &amp; Setup</h2>
+      <p class="text-slate-500 text-sm mb-6">Configure the physical testing environment.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Measurement Unit</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="unit-btn" data-unit="cm" onclick="selectUnit('cm')">Centimeters</button>
+            <button class="unit-btn active" data-unit="meters" onclick="selectUnit('meters')">Meters</button>
+            <button class="unit-btn" data-unit="inches" onclick="selectUnit('inches')">Inches</button>
+            <button class="unit-btn" data-unit="feet" onclick="selectUnit('feet')">Feet</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Testing Distance</label>
+          <div class="flex items-center gap-3">
+            <input class="input-field flex-1" id="distanceInput" type="number" value="3" min="0.1" step="0.1">
+            <span class="text-slate-600 font-medium text-sm" id="distanceUnitLabel">meters</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Typical: 3 m, 4 m, 6 m, 10 ft, 20 ft</p>
+        </div>
+      </div>
+      <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-700">Mirror Mode</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Flips chart horizontally for mirror setup at half distance.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="mirrorToggle" onchange="toggleMirror()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-between">
+        <button class="btn-secondary" onclick="goToPhase(2)">&larr; Back to Calibration</button>
+        <button class="btn-primary" onclick="startVisionTest()">Next: Start Vision Test &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase" id="phase4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+      <div class="flex flex-wrap items-center justify-between mb-4 gap-3 no-print">
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="eye-badge" id="currentEyeBadge" style="background:#dbeafe;color:#1e40af;">
+            <span>TESTING:</span>
+            <span id="currentEyeLabel">RIGHT EYE (OD)</span>
+          </div>
+          <button class="text-xs underline text-slate-500 hover:text-slate-700" onclick="switchTestingEye()">Switch Eye</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-secondary text-sm" onclick="alert('Navigate: \u2191/\u2193 rows | 1=Smallest Visible | 2=Largest Not Visible | S=Save | C=Clear')">Help</button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-3 no-print text-xs font-semibold text-slate-600">
+        <span class="benchmark-badge sv" id="benchmarkSVBadge" style="opacity:0.5">&check; SV: <span id="benchmarkSVLabel">Not set</span></span>
+        <span class="benchmark-badge lnv" id="benchmarkLNVBadge" style="opacity:0.5">&times; LNV: <span id="benchmarkLNVLabel">Not set</span></span>
+      </div>
+
+      <div class="chart-wrapper" id="chartWrapper">
+        <div id="chartDiag" style="color:#000;font-size:20px;padding:20px;text-align:center">Loading chart...</div>
+        <div id="chartContainer" class="flex flex-col items-center"></div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 mt-5 no-print">
+        <button class="btn-success text-sm" onclick="setSmallestVisible()">&#x2713; Set Smallest Visible</button>
+        <button class="btn-danger text-sm" onclick="setLargestNotVisible()">&#x2717; Set Largest Not Visible</button>
+        <button class="btn-secondary text-sm" onclick="clearBenchmarks()">Clear</button>
+        <button class="btn-secondary text-sm" onclick="navigateRow(-1)">&larr; Prev</button>
+        <button class="btn-secondary text-sm" onclick="navigateRow(1)">Next &rarr;</button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 mt-4 no-print">
+        <button class="btn-secondary" onclick="goBackToSetup()">&larr; Back to Setup</button>
+        <button class="btn-success" id="saveEyeResultBtn" onclick="saveEyeResult()">&#x1F4BE; Save <span id="saveEyeLabel">Right</span> Eye Result</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase" id="phase5">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Vision Test Results</h2>
+      <p class="text-slate-500 text-sm mb-6">Summary of acuity findings and estimated lens power.</p>
+
+      <div class="bg-slate-50 rounded-xl p-4 mb-6 text-sm text-slate-600 flex flex-wrap gap-x-8 gap-y-2">
+        <span><strong>Patient:</strong> <span id="resultPatientName">&mdash;</span></span>
+        <span><strong>Age:</strong> <span id="resultPatientAge">&mdash;</span></span>
+        <span><strong>Date:</strong> <span id="resultDate">&mdash;</span></span>
+        <span><strong>Distance:</strong> <span id="resultDistance">&mdash;</span></span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="result-card border-l-4 border-l-blue-500">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full">OD</span>
+            <span class="font-semibold text-slate-700">Right Eye</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-500">Snellen</span><span class="font-bold text-slate-800" id="resultODSnellen">&mdash;</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Decimal</span><span class="font-bold text-slate-800" id="resultODDecimal">&mdash;</span></div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 mt-2"><span class="text-slate-500">Estimated Lens Power</span><span class="font-bold text-lg text-blue-800" id="resultODLens">&mdash;</span></div>
+          </div>
+        </div>
+        <div class="result-card border-l-4 border-l-pink-500">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-bold text-pink-700 bg-pink-100 px-3 py-1 rounded-full">OS</span>
+            <span class="font-semibold text-slate-700">Left Eye</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-500">Snellen</span><span class="font-bold text-slate-800" id="resultOSSnellen">&mdash;</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Decimal</span><span class="font-bold text-slate-800" id="resultOSDecimal">&mdash;</span></div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 mt-2"><span class="text-slate-500">Estimated Lens Power</span><span class="font-bold text-lg text-pink-800" id="resultOSLens">&mdash;</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-red-50 border-2 border-red-300 rounded-xl p-4">
+        <p class="font-bold text-red-800 text-sm">&#x26A0; DISCLAIMER: This calculation is a rough mathematical estimation for screening purposes only. It does not replace a comprehensive refraction exam by a licensed optometrist or ophthalmologist. Do not purchase lenses based solely on this screening.</p>
+      </div>
+
+      <div class="mt-8 flex flex-wrap gap-4 justify-center">
+        <button class="btn-secondary" onclick="goToPhase(4)">&larr; Back to Vision Test</button>
+        <button class="btn-secondary" onclick="goToPhase(3)">&larr; Back to Setup</button>
+        <button class="btn-primary" onclick="exportPDF()">&#x1F4C4; Export PDF Report</button>
+        <button class="btn-danger" onclick="resetTest()">&#x21BA; Reset Test</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Constants
+  var SNELLEN = [200, 100, 70, 50, 40, 30, 25, 20, 15];
+  var LETTERS_PER = [1, 2, 3, 3, 4, 4, 5, 5, 6];
+  var ROTS = [0, 90, 180, 270];
+  var LAYOUT_COUNT = 50;
+
+  // State
+  var st = {
+    phase: 1,
+    patient: { name: '', age: '', date: '', firstEye: 'right' },
+    cal: { ppi: 96, cardPx: 324, rulerPxCm: 38, ppiCard: null, ppiRuler: null },
+    dist: { unit: 'meters', value: 3, mirror: false },
+    eyes: {
+      right: { acuity: null, decimal: null, done: false, lens: null },
+      left: { acuity: null, decimal: null, done: false, lens: null }
+    },
+    chart: {
+      selRow: 0,
+      letters: [],
+      bm: { sv: null, lnv: null },
+      layout: [],
+      layoutIdx: 0
+    },
+    currentEye: 'right',
+    awaitingEye: false,
+    pool: []
+  };
+
+  var modalCb = null;
+
+  // ======== INIT ========
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('testDate').value = new Date().toISOString().split('T')[0];
+    buildRuler();
+    updateCard();
+    updateRuler();
+    document.getElementById('patientName').addEventListener('input', function() { st.patient.name = this.value; });
+    document.getElementById('patientAge').addEventListener('input', function() { st.patient.age = this.value; });
+    document.getElementById('testDate').addEventListener('input', function() { st.patient.date = this.value; });
+    document.getElementById('distanceInput').addEventListener('input', function() { st.dist.value = parseFloat(this.value) || 0; });
+  });
+
+  // ======== LAYOUT GENERATOR ========
+  function genLayouts(n) {
+    var pool = [];
+    for (var i = 0; i < n; i++) {
+      var lo = [];
+      for (var r = 0; r < SNELLEN.length; r++) {
+        var row = [];
+        for (var c = 0; c < LETTERS_PER[r]; c++) row.push(ROTS[Math.floor(Math.random() * 4)]);
+        lo.push(row);
+      }
+      pool.push(lo);
+    }
+    return pool;
+  }
+
+  function nextLayout() {
+    if (!st.pool || st.pool.length === 0) st.pool = genLayouts(LAYOUT_COUNT);
+    var idx = st.chart.layoutIdx % st.pool.length;
+    st.chart.layoutIdx = (st.chart.layoutIdx + 1) % st.pool.length;
+    st.chart.layout = st.pool[idx];
+    return st.chart.layout;
+  }
+
+  // ======== PHASE MGMT ========
+  function goToPhase(n) {
+    if (n === 2) {
+      var name = document.getElementById('patientName').value.trim();
+      var age = document.getElementById('patientAge').value.trim();
+      var date = document.getElementById('testDate').value;
+      if (!name || !age || !date) { alert('Please fill in all patient fields.'); return; }
+      if (isNaN(parseInt(age)) || parseInt(age) < 0 || parseInt(age) > 140) { alert('Enter a valid age (0-140).'); return; }
+      st.patient.name = name; st.patient.age = age; st.patient.date = date;
+    }
+    if (n === 3) {
+      if (st.cal.ppi < 20 || st.cal.ppi > 1200) { alert('PPI seems invalid. Adjust calibration.'); return; }
+    }
+    if (n === 4) {
+      var d = parseFloat(document.getElementById('distanceInput').value);
+      if (!d || d <= 0) { alert('Enter a valid testing distance.'); return; }
+      st.dist.value = d;
+    }
+    if (n === 5) {
+      if (!st.eyes.right.done || !st.eyes.left.done) { alert('Both eyes must be tested.'); return; }
+    }
+
+    st.phase = n;
+    document.querySelectorAll('.phase').forEach(function(el) { el.classList.remove('active'); });
+    var t = document.getElementById('phase' + n);
+    if (t) t.classList.add('active');
+    updateProgress(n);
+
+    if (n === 4) { updateEyeHeader(); st.chart.bm = { sv: null, lnv: null }; renderChart(); }
+    if (n === 5) renderResults();
+    window.scrollTo(0, 0);
+  }
+
+  function updateProgress(n) {
+    document.querySelectorAll('.step-dot').forEach(function(d) {
+      var s = parseInt(d.dataset.step);
+      d.classList.remove('active', 'done');
+      if (s === n) d.classList.add('active');
+      else if (s < n) d.classList.add('done');
+    });
+    document.querySelectorAll('.step-line').forEach(function(l) {
+      var p = l.dataset.step.split('-');
+      l.classList.toggle('done', parseInt(p[1]) <= n);
+    });
+  }
+
+  // ======== PHASE 1 ========
+  function selectFirstEye(e) {
+    st.patient.firstEye = e;
+    document.getElementById('eyeRightBtn').classList.toggle('active', e === 'right');
+    document.getElementById('eyeLeftBtn').classList.toggle('active', e === 'left');
+  }
+
+  // ======== PHASE 2 ========
+  function updateCard() {
+    var v = parseInt(document.getElementById('cardSlider').value);
+    st.cal.cardPx = v;
+    var r = document.getElementById('creditCardRect');
+    var h = Math.round(v / (85.6 / 53.98));
+    r.style.width = v + 'px'; r.style.height = h + 'px';
+    document.getElementById('cardWidthPxLabel').textContent = v + ' px';
+    var ppi = v / (85.6 / 25.4);
+    st.cal.ppiCard = ppi;
+    document.getElementById('ppiFromCard').textContent = ppi > 0 ? Math.round(ppi) : '\u2014';
+    recalcPPI();
+  }
+
+  function updateRuler() {
+    var v = parseInt(document.getElementById('rulerSlider').value);
+    st.cal.rulerPxCm = v;
+    document.getElementById('rulerPxCmLabel').textContent = v + ' px/cm';
+    buildRuler();
+    var ppi = v * 2.54;
+    st.cal.ppiRuler = ppi;
+    document.getElementById('ppiFromRuler').textContent = ppi > 0 ? Math.round(ppi) : '\u2014';
+    recalcPPI();
+  }
+
+  function buildRuler() {
+    var inner = document.getElementById('rulerInner');
+    var pxCm = st.cal.rulerPxCm;
+    var total = Math.max(10, Math.min(30, Math.floor((inner.parentElement.clientWidth || 600) / pxCm)));
+    inner.innerHTML = '';
+    inner.style.height = '52px';
+    for (var i = 0; i <= total; i++) {
+      var m = document.createElement('div');
+      m.className = 'cm-mark';
+      m.style.width = pxCm + 'px';
+      var tk = document.createElement('div');
+      tk.className = 'cm-tick major';
+      tk.style.height = (i % 5 === 0 ? 26 : 16) + 'px';
+      m.appendChild(tk);
+      if (i % 5 === 0 || i === 0) {
+        var lb = document.createElement('div');
+        lb.className = 'cm-label';
+        lb.textContent = i;
+        m.appendChild(lb);
+      }
+      for (var j = 1; j < 10; j++) {
+        var s = document.createElement('div');
+        s.className = 'cm-mark';
+        s.style.width = (pxCm / 10) + 'px';
+        var stk = document.createElement('div');
+        stk.className = 'cm-tick minor';
+        stk.style.height = (j % 5 === 0 ? 12 : 8) + 'px';
+        s.appendChild(stk);
+        inner.appendChild(s);
+      }
+      inner.appendChild(m);
+    }
+  }
+
+  function recalcPPI() {
+    var vals = [];
+    if (st.cal.ppiCard && st.cal.ppiCard > 0) vals.push(st.cal.ppiCard);
+    if (st.cal.ppiRuler && st.cal.ppiRuler > 0) vals.push(st.cal.ppiRuler);
+    st.cal.ppi = vals.length > 0 ? vals.reduce(function(a, b) { return a + b; }, 0) / vals.length : 96;
+    document.getElementById('effectivePPI').textContent = Math.round(st.cal.ppi);
+  }
+
+  // ======== PHASE 3 ========
+  function selectUnit(u) {
+    st.dist.unit = u;
+    document.querySelectorAll('.unit-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.unit === u); });
+    var labels = { cm: 'cm', meters: 'meters', inches: 'inches', feet: 'feet' };
+    document.getElementById('distanceUnitLabel').textContent = labels[u] || u;
+  }
+
+  function toggleMirror() {
+    st.dist.mirror = document.getElementById('mirrorToggle').checked;
+  }
+
+  function startVisionTest() {
+    var d = parseFloat(document.getElementById('distanceInput').value);
+    if (!d || d <= 0) { alert('Please enter a valid testing distance.'); return; }
+    st.dist.value = d;
+    st.dist.mirror = document.getElementById('mirrorToggle').checked;
+    st.currentEye = st.patient.firstEye;
+    st.awaitingEye = false;
+    updateEyeHeader();
+    goToPhase(4);
+  }
+
+  // ======== PHASE 4 ========
+  function getDistM() {
+    var v = st.dist.value;
+    switch (st.dist.unit) {
+      case 'cm': return v / 100;
+      case 'inches': return v * 0.0254;
+      case 'feet': return v * 0.3048;
+      default: return v;
+    }
+  }
+
+  function updateEyeHeader() {
+    var right = st.currentEye === 'right';
+    var badge = document.getElementById('currentEyeBadge');
+    var label = document.getElementById('currentEyeLabel');
+    var sl = document.getElementById('saveEyeLabel');
+    var btn = document.getElementById('saveEyeResultBtn');
+    if (right) {
+      badge.style.background = '#dbeafe'; badge.style.color = '#1e40af';
+      label.textContent = 'RIGHT EYE (OD)';
+      sl.textContent = 'Right';
+    } else {
+      badge.style.background = '#fce7f3'; badge.style.color = '#9d174d';
+      label.textContent = 'LEFT EYE (OS)';
+      sl.textContent = 'Left';
+    }
+    var done = right ? st.eyes.right.done : st.eyes.left.done;
+    btn.innerHTML = '\uD83D\uDCBE ' + (done ? 'Re-test ' : 'Save ') + sl.textContent + ' Eye Result';
+    document.getElementById('chartWrapper').classList.toggle('mirror', st.dist.mirror);
+  }
+
+  function renderChart() {
+    try {
+      var layout = nextLayout();
+      var container = document.getElementById('chartContainer');
+      if (!container) return;
+      var diag = document.getElementById('chartDiag');
+
+      container.innerHTML = '';
+      st.chart.letters = [];
+      st.chart.selRow = 0;
+      st.chart.bm = { sv: null, lnv: null };
+
+      updateBadges();
+
+      var distM = getDistM();
+      if (!distM || distM <= 0 || isNaN(distM)) distM = 3;
+      var ppi = st.cal.ppi;
+      if (!ppi || ppi <= 0 || isNaN(ppi)) ppi = 96;
+      var h20 = 2 * distM * Math.tan((2.5 / 60) * Math.PI / 180) * ppi / 0.0254;
+      if (isNaN(h20) || h20 <= 0) h20 = 16;
+
+      for (var ri = 0; ri < SNELLEN.length; ri++) {
+        var denom = SNELLEN[ri];
+        var row = document.createElement('div');
+        row.className = 'chart-row';
+        row.setAttribute('data-row', ri);
+
+        (function(rowIdx) {
+          row.addEventListener('click', function(e) {
+            if (e.target.classList.contains('e-letter')) return;
+            selectRow(rowIdx);
+          });
+        })(ri);
+
+        var label = document.createElement('span');
+        label.className = 'snellen-label';
+        if (st.dist.mirror) label.style.transform = 'scaleX(-1)';
+        label.textContent = '20/' + denom;
+        row.appendChild(label);
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'letters-wrapper';
+
+        var letterH = h20 * denom / 20;
+        if (isNaN(letterH) || letterH < 6) letterH = 16;
+
+        var nL = LETTERS_PER[ri];
+        var rowLetters = [];
+
+        for (var li = 0; li < nL; li++) {
+          var rot = (layout[ri] && layout[ri][li] !== undefined) ? layout[ri][li] : ROTS[Math.floor(Math.random() * 4)];
+          var span = document.createElement('span');
+          span.className = 'e-letter';
+          span.textContent = 'E';
+          span.setAttribute('data-state', 'unmarked');
+          span.style.fontSize = letterH + 'px';
+          span.style.transform = 'rotate(' + rot + 'deg)';
+
+          (function(el) {
+            el.addEventListener('click', function(e) {
+              e.stopPropagation();
+              toggleLetter(el);
+            });
+          })(span);
+
+          wrapper.appendChild(span);
+          rowLetters.push({ el: span, state: 'unmarked' });
+        }
+
+        row.appendChild(wrapper);
+        container.appendChild(row);
+        st.chart.letters[ri] = rowLetters;
+      }
+
+      if (diag) diag.style.display = 'none';
+      selectRow(0);
+    } catch (e) {
+      var diag2 = document.getElementById('chartDiag');
+      if (diag2) diag2.textContent = 'Error: ' + e.message;
+      var c = document.getElementById('chartContainer');
+      if (c) c.innerHTML = '<div style="color:red;padding:20px;text-align:center;font-size:16px">Chart error: ' + e.message + '</div>';
+    }
+  }
+
+  function selectRow(idx) {
+    st.chart.selRow = idx;
+    var rows = document.querySelectorAll('#chartContainer .chart-row');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].classList.toggle('active-row', i === idx);
+    }
+  }
+
+  function navigateRow(dir) {
+    var max = SNELLEN.length - 1;
+    var next = st.chart.selRow + dir;
+    if (next < 0) next = 0;
+    if (next > max) next = max;
+    selectRow(next);
+    var rows = document.querySelectorAll('#chartContainer .chart-row');
+    if (rows[next]) rows[next].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function toggleLetter(el) {
+    var sz = el.style.fontSize || '16px';
+    var rot = el.style.transform || 'rotate(0deg)';
+    var cur = el.getAttribute('data-state');
+
+    if (cur === 'unmarked') {
+      el.setAttribute('data-state', 'passed');
+      el.style.cssText = '';
+      el.className = 'e-letter';
+      el.style.fontSize = sz;
+      el.style.transform = rot;
+      el.classList.add('passed');
+    } else if (cur === 'passed') {
+      el.setAttribute('data-state', 'failed');
+      el.style.cssText = '';
+      el.className = 'e-letter';
+      el.style.fontSize = sz;
+      el.style.transform = rot;
+      el.classList.add('failed');
+    } else {
+      el.setAttribute('data-state', 'unmarked');
+      el.style.cssText = '';
+      el.className = 'e-letter';
+      el.style.fontSize = sz;
+      el.style.transform = rot;
+    }
+    syncLetters();
+  }
+
+  function syncLetters() {
+    var rows = document.querySelectorAll('#chartContainer .chart-row');
+    for (var ri = 0; ri < rows.length; ri++) {
+      var els = rows[ri].querySelectorAll('.e-letter');
+      for (var li = 0; li < els.length; li++) {
+        if (st.chart.letters[ri] && st.chart.letters[ri][li]) {
+          st.chart.letters[ri][li].state = els[li].getAttribute('data-state');
+        }
+      }
+    }
+  }
+
+  function markRow(ri, state) {
+    var els = document.querySelectorAll('#chartContainer .chart-row[data-row="' + ri + '"] .e-letter');
+    for (var i = 0; i < els.length; i++) {
+      els[i].setAttribute('data-state', state);
+      els[i].classList.remove('passed', 'failed');
+      if (state === 'passed') els[i].classList.add('passed');
+      if (state === 'failed') els[i].classList.add('failed');
+    }
+  }
+
+  function updateBadges() {
+    var bm = st.chart.bm;
+    var svL = document.getElementById('benchmarkSVLabel');
+    var lnvL = document.getElementById('benchmarkLNVLabel');
+    var svB = document.getElementById('benchmarkSVBadge');
+    var lnvB = document.getElementById('benchmarkLNVBadge');
+    if (bm.sv !== null) { svL.textContent = '20/' + SNELLEN[bm.sv]; svB.style.opacity = '1'; }
+    else { svL.textContent = 'Not set'; svB.style.opacity = '0.5'; }
+    if (bm.lnv !== null) { lnvL.textContent = '20/' + SNELLEN[bm.lnv]; lnvB.style.opacity = '1'; }
+    else { lnvL.textContent = 'Not set'; lnvB.style.opacity = '0.5'; }
+  }
+
+  function updateRowStyles() {
+    var bm = st.chart.bm;
+    var rows = document.querySelectorAll('#chartContainer .chart-row');
+    for (var i = 0; i < rows.length; i++) {
+      var ri = parseInt(rows[i].getAttribute('data-row'));
+      rows[i].classList.remove('benchmark-sv', 'benchmark-lnv');
+      if (bm.sv === ri) rows[i].classList.add('benchmark-sv');
+      if (bm.lnv === ri) rows[i].classList.add('benchmark-lnv');
+    }
+  }
+
+  function applyBenchmarks() {
+    var bm = st.chart.bm;
+    var allE = document.querySelectorAll('#chartContainer .e-letter');
+    for (var i = 0; i < allE.length; i++) {
+      allE[i].setAttribute('data-state', 'unmarked');
+      allE[i].classList.remove('passed', 'failed');
+    }
+    if (bm.sv !== null) {
+      for (var r = 0; r <= bm.sv; r++) markRow(r, 'passed');
+    }
+    if (bm.lnv !== null) {
+      for (var r2 = bm.lnv; r2 < SNELLEN.length; r2++) markRow(r2, 'failed');
+    }
+    syncLetters();
+  }
+
+  function setSmallestVisible() {
+    var idx = st.chart.selRow;
+    var bm = st.chart.bm;
+    if (bm.lnv !== null && bm.lnv <= idx) bm.lnv = null;
+    bm.sv = idx;
+    applyBenchmarks();
+    updateBadges();
+    updateRowStyles();
+  }
+
+  function setLargestNotVisible() {
+    var idx = st.chart.selRow;
+    var bm = st.chart.bm;
+    if (bm.sv !== null && bm.sv >= idx) bm.sv = null;
+    bm.lnv = idx;
+    applyBenchmarks();
+    updateBadges();
+    updateRowStyles();
+  }
+
+  function clearBenchmarks() {
+    st.chart.bm = { sv: null, lnv: null };
+    var allE = document.querySelectorAll('#chartContainer .e-letter');
+    for (var i = 0; i < allE.length; i++) {
+      allE[i].setAttribute('data-state', 'unmarked');
+      allE[i].classList.remove('passed', 'failed');
+    }
+    var rows = document.querySelectorAll('#chartContainer .chart-row');
+    for (var j = 0; j < rows.length; j++) rows[j].classList.remove('benchmark-sv', 'benchmark-lnv');
+    syncLetters();
+    updateBadges();
+  }
+
+  function determineAcuity() {
+    var bm = st.chart.bm;
+    if (bm.sv !== null) {
+      var d = SNELLEN[bm.sv];
+      return { snellen: '20/' + d, denom: d, decimal: 20 / d };
+    }
+    if (bm.lnv !== null) {
+      var above = bm.lnv - 1;
+      if (above >= 0) {
+        var d2 = SNELLEN[above];
+        return { snellen: '20/' + d2, denom: d2, decimal: 20 / d2 };
+      }
+    }
+    for (var i = SNELLEN.length - 1; i >= 0; i--) {
+      var row = st.chart.letters[i];
+      if (!row) continue;
+      var allPassed = true;
+      for (var j = 0; j < row.length; j++) {
+        if (row[j].state !== 'passed') { allPassed = false; break; }
+      }
+      if (allPassed) {
+        var d3 = SNELLEN[i];
+        return { snellen: '20/' + d3, denom: d3, decimal: 20 / d3 };
+      }
+    }
+    return { snellen: '20/200', denom: 200, decimal: 0.10 };
+  }
+
+  function estimateLens(denom) {
+    if (denom <= 20) return { val: 0, label: '0.00 D (Emmetropia/Plano)' };
+    var dist = getDistM();
+    var blur = dist * (20 / denom);
+    var d = -1 / blur;
+    var r = Math.round(d * 4) / 4;
+    var sign = r > 0 ? '+' : '';
+    return { val: r, label: sign + r.toFixed(2) + ' D' };
+  }
+
+  function saveEyeResult() {
+    var bm = st.chart.bm;
+    var has = (bm.sv !== null || bm.lnv !== null);
+    if (!has) {
+      for (var r = 0; r < st.chart.letters.length && !has; r++) {
+        var row = st.chart.letters[r];
+        if (row) {
+          for (var c = 0; c < row.length && !has; c++) {
+            if (row[c].state !== 'unmarked') has = true;
+          }
+        }
+      }
+    }
+    if (!has) {
+      if (!confirm('No benchmarks set. Default acuity 20/200 will be used. Continue?')) return;
+    }
+    var acuity = determineAcuity();
+    var eyeKey = st.currentEye;
+    var eyeLabel = eyeKey === 'right' ? 'Right' : 'Left';
+    st.eyes[eyeKey].acuity = acuity.snellen;
+    st.eyes[eyeKey].decimal = acuity.decimal;
+    st.eyes[eyeKey].done = true;
+    st.eyes[eyeKey].lens = estimateLens(acuity.denom);
+
+    if (st.eyes.right.done && st.eyes.left.done) {
+      goToPhase(5);
+    } else {
+      var other = eyeKey === 'right' ? 'left' : 'right';
+      var otherLabel = other === 'right' ? 'Right' : 'Left';
+      var otherAbbr = other === 'right' ? 'OD' : 'OS';
+      showModal(
+        eyeLabel + ' Eye Complete',
+        eyeLabel + ' eye acuity: ' + acuity.snellen + ' (' + acuity.decimal.toFixed(2) + ').<br><br>Proceed to test <strong>' + otherLabel + ' Eye (' + otherAbbr + ')</strong>?',
+        function() {
+          st.currentEye = other;
+          st.awaitingEye = false;
+          updateEyeHeader();
+          renderChart();
+          closeModal();
+        }
+      );
+    }
+  }
+
+  function switchTestingEye() {
+    var other = st.currentEye === 'right' ? 'left' : 'right';
+    if (!confirm('Switch to ' + (other === 'right' ? 'Right' : 'Left') + ' Eye? Chart will scramble.')) return;
+    st.currentEye = other;
+    st.awaitingEye = false;
+    st.chart.bm = { sv: null, lnv: null };
+    updateEyeHeader();
+    renderChart();
+  }
+
+  function goBackToSetup() {
+    goToPhase(3);
+  }
+
+  // ======== MODAL ========
+  function showModal(title, msg, cb) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').innerHTML = msg;
+    document.getElementById('modalOverlay').classList.add('open');
+    modalCb = cb;
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    modalCb = null;
+  }
+
+  function confirmModal() {
+    if (typeof modalCb === 'function') { var cb = modalCb; modalCb = null; cb(); }
+    closeModal();
+  }
+
+  // ======== PHASE 5 ========
+  function renderResults() {
+    document.getElementById('resultPatientName').textContent = st.patient.name || '\u2014';
+    document.getElementById('resultPatientAge').textContent = st.patient.age || '\u2014';
+    document.getElementById('resultDate').textContent = st.patient.date || '\u2014';
+    document.getElementById('resultDistance').textContent = st.dist.value + ' ' + st.dist.unit;
+
+    var r = st.eyes.right;
+    document.getElementById('resultODSnellen').textContent = r.acuity || '\u2014';
+    document.getElementById('resultODDecimal').textContent = r.decimal !== null ? r.decimal.toFixed(2) : '\u2014';
+    document.getElementById('resultODLens').textContent = r.lens ? r.lens.label : '\u2014';
+
+    var l = st.eyes.left;
+    document.getElementById('resultOSSnellen').textContent = l.acuity || '\u2014';
+    document.getElementById('resultOSDecimal').textContent = l.decimal !== null ? l.decimal.toFixed(2) : '\u2014';
+    document.getElementById('resultOSLens').textContent = l.lens ? l.lens.label : '\u2014';
+  }
+
+  // ======== EXPORT ========
+  function exportPDF() {
+    document.getElementById('printName').textContent = st.patient.name || '\u2014';
+    document.getElementById('printAge').textContent = st.patient.age || '\u2014';
+    document.getElementById('printDate').textContent = st.patient.date || '\u2014';
+    document.getElementById('printDistance').textContent = st.dist.value + ' ' + st.dist.unit;
+    document.getElementById('printPPI').textContent = Math.round(st.cal.ppi) + ' PPI';
+    document.getElementById('printODSnellen').textContent = st.eyes.right.acuity || '\u2014';
+    document.getElementById('printODDecimal').textContent = st.eyes.right.decimal !== null ? st.eyes.right.decimal.toFixed(2) : '\u2014';
+    document.getElementById('printODLens').textContent = st.eyes.right.lens ? st.eyes.right.lens.label : '\u2014';
+    document.getElementById('printOSSnellen').textContent = st.eyes.left.acuity || '\u2014';
+    document.getElementById('printOSDecimal').textContent = st.eyes.left.decimal !== null ? st.eyes.left.decimal.toFixed(2) : '\u2014';
+    document.getElementById('printOSLens').textContent = st.eyes.left.lens ? st.eyes.left.lens.label : '\u2014';
+    document.getElementById('printGenerated').textContent = new Date().toLocaleString();
+    window.print();
+  }
+
+  // ======== RESET ========
+  function resetTest() {
+    if (!confirm('Reset all test data? Current results will be lost.')) return;
+    st.patient.name = ''; st.patient.age = ''; st.patient.date = ''; st.patient.firstEye = 'right';
+    st.eyes.right = { acuity: null, decimal: null, done: false, lens: null };
+    st.eyes.left = { acuity: null, decimal: null, done: false, lens: null };
+    st.chart.letters = []; st.chart.selRow = 0; st.chart.bm = { sv: null, lnv: null };
+    st.chart.layout = []; st.chart.layoutIdx = 0; st.pool = [];
+    st.currentEye = 'right'; st.awaitingEye = false;
+
+    document.getElementById('patientName').value = '';
+    document.getElementById('patientAge').value = '';
+    document.getElementById('testDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('eyeRightBtn').classList.add('active');
+    document.getElementById('eyeLeftBtn').classList.remove('active');
+    document.getElementById('distanceInput').value = 3;
+    document.getElementById('mirrorToggle').checked = false;
+    st.dist.mirror = false; st.dist.value = 3; st.dist.unit = 'meters';
+    document.querySelectorAll('.unit-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.unit === 'meters'); });
+    document.getElementById('distanceUnitLabel').textContent = 'meters';
+    goToPhase(1);
+  }
+
+  // ======== KEYBOARD ========
+  document.addEventListener('keydown', function(e) {
+    if (st.phase !== 4) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); navigateRow(1); break;
+      case 'ArrowUp': e.preventDefault(); navigateRow(-1); break;
+      case '1': setSmallestVisible(); break;
+      case '2': setLargestNotVisible(); break;
+      case 's': case 'S': saveEyeResult(); break;
+      case 'c': case 'C': clearBenchmarks(); break;
+    }
+  });
+
+  // Resize
+  var resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildRuler, 200);
+  });
+
+  // Expose globals for inline onclick
+  window.selectFirstEye = selectFirstEye;
+  window.goToPhase = goToPhase;
+  window.updateCardCalibration = updateCard;
+  window.updateRulerCalibration = updateRuler;
+  window.selectUnit = selectUnit;
+  window.toggleMirror = toggleMirror;
+  window.startVisionTest = startVisionTest;
+  window.switchTestingEye = switchTestingEye;
+  window.setSmallestVisible = setSmallestVisible;
+  window.setLargestNotVisible = setLargestNotVisible;
+  window.clearBenchmarks = clearBenchmarks;
+  window.navigateRow = navigateRow;
+  window.saveEyeResult = saveEyeResult;
+  window.goBackToSetup = goBackToSetup;
+  window.closeModal = closeModal;
+  window.confirmModal = confirmModal;
+  window.exportPDF = exportPDF;
+  window.resetTest = resetTest;
+
+})();
+</script>
+
+</body>
+</html>
